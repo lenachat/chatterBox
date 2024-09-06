@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, TextInput, ImageBackground, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, TextInput, ImageBackground, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native';
 import { useState } from 'react';
 
 const StartScreen = ({ navigation }) => {
@@ -8,8 +8,8 @@ const StartScreen = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <ImageBackground
-        style={styles.backgroundImage}
-        source={require('../assets/background-image.png')}>
+        source={require('../assets/background-image.png')}
+        style={styles.backgroundImage}>
         <Text style={styles.appTitle}>Welcome!</Text>
         <View style={styles.loginContainer}>
           <TextInput
@@ -21,19 +21,34 @@ const StartScreen = ({ navigation }) => {
           <Text style={styles.chooseColorText}>Choose Background Color:</Text>
           <View style={styles.backgroundColorButtonsContainer}>
             <TouchableOpacity
+              accessible={true}
+              accessibilityLabel="Black background"
+              accessibilityHint="Let's you choose a black background color for the chat interface"
               style={[styles.backgroundColorButton, { backgroundColor: '#090C08' }, bgColor === "#090C08" && styles.selectedColor]}
               onPress={() => setBgColor('#090C08')} />
             <TouchableOpacity
+              accessible={true}
+              accessibilityLabel="Dark purple background"
+              accessibilityHint="Let's you choose a dark purple background color for the chat interface"
               style={[styles.backgroundColorButton, { backgroundColor: '#474056' }, bgColor === "#474056" && styles.selectedColor]}
               onPress={() => setBgColor('#474056')} />
             <TouchableOpacity
+              accessible={true}
+              accessibilityLabel="Grey background"
+              accessibilityHint="Let's you choose a grey background color for the chat interface"
               style={[styles.backgroundColorButton, { backgroundColor: '#8A95A5' }, bgColor === "#8A95A5" && styles.selectedColor]}
               onPress={() => setBgColor('#8A95A5')} />
             <TouchableOpacity
+              accessible={true}
+              accessibilityLabel="Green background"
+              accessibilityHint="Let's you choose a green background color for the chat interface"
               style={[styles.backgroundColorButton, { backgroundColor: '#B9C6AE' }, bgColor === "#B9C6AE" && styles.selectedColor]}
               onPress={() => setBgColor('#B9C6AE')} />
           </View>
           <TouchableOpacity
+            accessible={true}
+            accessibilityLabel="Enter Chatroom"
+            accessibilityHint="Let's you enter the chatroom"
             style={styles.button}
             onPress={() => navigation.navigate('ChatScreen', { name: name, bgColor: bgColor })}>
             <Text style={styles.enterChatroomText}>
@@ -41,7 +56,8 @@ const StartScreen = ({ navigation }) => {
             </Text>
           </TouchableOpacity>
         </View>
-      </ImageBackground >
+      </ImageBackground>
+      {Platform.OS === 'ios' ? <KeyboardAvoidingView behavior="padding" /> : null}
     </View >
   );
 }
@@ -79,11 +95,12 @@ const styles = StyleSheet.create({
     color: "#757083",
     opacity: "50%",
     width: "88%",
-    padding: 15,
+    padding: 10,
+    paddingLeft: 15,
     borderWidth: 1,
     borderColor: '#ccc',
     flex: 1,
-    marginBottom: 15,
+    marginBottom: 10,
     marginTop: "7%",
   },
   chooseColorText: {
