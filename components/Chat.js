@@ -2,7 +2,7 @@ import { StyleSheet, View, KeyboardAvoidingView, Platform, Text } from 'react-na
 import { useState, useEffect } from 'react';
 import { GiftedChat, Bubble, SystemMessage, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 
-const ChatScreen = ({ route, navigation }) => {
+const ChatScreen = ({ route, navigation, db }) => {
   const { name, bgColor } = route.params;
   const [messages, setMessages] = useState([]);
   const onSend = (newMessages) => {
