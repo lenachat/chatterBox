@@ -1,41 +1,35 @@
 import { StyleSheet, View, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { useState, useEffect } from 'react';
 import { GiftedChat, Bubble, SystemMessage, InputToolbar, Send, Day } from 'react-native-gifted-chat';
+import { collection, addDoc, getDocs, onSnapshot, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
 
 const ChatScreen = ({ route, navigation, db }) => {
+  const { userID } = route.params;
   const { name, bgColor } = route.params;
   const [messages, setMessages] = useState([]);
+
+  //save sent messages on Firestore database
   const onSend = (newMessages) => {
-    setMessages(previousMessages => GiftedChat.append(previousMessages, newMessages))
+    addDoc(collection(db, 'messages'), newMessages[0]);
   };
 
   useEffect(() => {
     navigation.setOptions({
       title: `Hello ${name}!`
     });
-    setMessages([
-      {
-        _id: 1,
-        text: 'Hello developer!',
-        createdAt: new Date(),
-        user: {
-          _id: 2,
-          name: 'React Native',
-          avatar: 'https://placeimg.com/140/140/any',
-        },
-        // sent: true,
-        // received: true,
-        // pending: true,
-      },
-      {
-        _id: 2,
-        text: 'This is a system message',
-        createdAt: new Date(),
-        system: true,
-      },
-    ]);
+    const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+    const unsubscribe = onSnapshot(q, (querySnapshot) => {
+      let newMessages = [];
+      querySnapshot.forEach((doc) => {
+        newMessages.push({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date() });
+      });
+      setMessages(newMessages);
+    });
+    return () => {
+      if (unsubscribe)
+        unsubscribe();
+    };
   }, []);
-
 
   const renderSystemMessage = (props) => {
     let textColor = '#000'; // default system message color
@@ -129,7 +123,8 @@ const ChatScreen = ({ route, navigation, db }) => {
         renderDay={renderDay}
         onSend={messages => onSend(messages)}
         user={{
-          _id: 1,
+          _id: userID,
+          name: name,
         }}
       />
       {Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null}
