@@ -1,15 +1,17 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
 import StartScreen from './components/Start';
 import ChatScreen from './components/Chat';
 import { NavigationContainer } from '@react-navigation/native';
+import { useNetInfo } from '@react-native-community/netinfo';
+import { useEffect } from 'react';
+import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 const Stack = createNativeStackNavigator();
 
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, disableNetwork, enableNetwork } from 'firebase/firestore';
 
 const App = () => {
+  const connectionStatus = useNetInfo(); //hook to get the network connection status
 
   //initialize Firebase and Cloud Firestore
   const firebaseConfig = {
@@ -23,12 +25,22 @@ const App = () => {
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
+  //check for network connection status
+  useEffect(() => {
+    if (connectionStatus.isConnected === false) {
+      Alert.alert("No internet connection.");
+      disableNetwork(db); //disable attempt to reconnect to the Firestore database when there is no internet connection
+    } else if (connectionStatus.isConnected === true) {
+      enableNetwork(db); //enable the network connection to the Firestore database
+    }
+  }, [connectionStatus.isConnected]);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName='StartScreen'>
         <Stack.Screen name='ChatterBox' component={StartScreen} />
         <Stack.Screen name='ChatScreen'>
-          {props => <ChatScreen {...props} db={db} />}
+          {props => <ChatScreen {...props} db={db} isConnected={connectionStatus.isConnected} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

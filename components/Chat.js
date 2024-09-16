@@ -1,9 +1,10 @@
 import { StyleSheet, View, KeyboardAvoidingView, Platform, Text } from 'react-native';
 import { useState, useEffect } from 'react';
 import { GiftedChat, Bubble, SystemMessage, InputToolbar, Send, Day } from 'react-native-gifted-chat';
-import { collection, addDoc, getDocs, onSnapshot, query, where, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ChatScreen = ({ route, navigation, db }) => {
+const ChatScreen = ({ route, navigation, db, isConnected }) => {
   const { userID } = route.params;
   const { name, bgColor } = route.params;
   const [messages, setMessages] = useState([]);
@@ -13,24 +14,55 @@ const ChatScreen = ({ route, navigation, db }) => {
     addDoc(collection(db, 'messages'), newMessages[0]);
   };
 
+  let unsubscribe;
   useEffect(() => {
     navigation.setOptions({
       title: `Hello ${name}!`
     });
-    const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      let newMessages = [];
-      querySnapshot.forEach((doc) => {
-        newMessages.push({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date() });
+
+    if (isConnected === true) {
+
+      // unsubscribe from the snapshot listener if it is already active preventing multiple listeners 
+      // when the component is re-rendered due to changes in the connection status
+      if (unsubscribe) {
+        unsubscribe = null;
+      }
+
+      // query the Firestore database for messages
+      const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
+      const unsubscribe = onSnapshot(q, (querySnapshot) => {
+        let newMessages = [];
+        querySnapshot.forEach((doc) => {
+          newMessages.push({ id: doc.id, ...doc.data(), createdAt: doc.data().createdAt ? doc.data().createdAt.toDate() : new Date() });
+        });
+        cacheMessages(newMessages);
+        setMessages(newMessages);
       });
-      setMessages(newMessages);
-    });
+    } else { loadCachedMessages(); }
+
+    // unsubscribe from the snapshot listener when the component is unmounted
     return () => {
       if (unsubscribe)
         unsubscribe();
     };
-  }, []);
+  }, [isConnected]);
 
+  // cache messages to AsyncStorage
+  const cacheMessages = async (messages) => {
+    try {
+      await AsyncStorage.setItem('messages', JSON.stringify(messages));
+    } catch (error) {
+      console.log(error.message);
+    }
+  }
+
+  // load cached messages from AsyncStorage (is called when there is no internet connection)
+  const loadCachedMessages = async () => {
+    const cachedMessages = await AsyncStorage.getItem('messages') || [];
+    setMessages(JSON.parse(cachedMessages));
+  };
+
+  // Custom SystemMessage component to style the system messages
   const renderSystemMessage = (props) => {
     let textColor = '#000'; // default system message color
     if (bgColor === '#090C08') {
@@ -53,6 +85,7 @@ const ChatScreen = ({ route, navigation, db }) => {
     );
   };
 
+  // Custom Bubble component to style the chat bubbles
   const renderBubble = (props) => {
     return <Bubble
       {...props}
@@ -74,13 +107,16 @@ const ChatScreen = ({ route, navigation, db }) => {
   // Custom InputToolbar to add padding to the message input
   const renderInputToolbar = (props) => {
     return (
-      <InputToolbar
-        {...props}
-        containerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }} // Add padding to input
-      />
+      (isConnected === true) ?
+        <InputToolbar
+          {...props}
+          containerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }} // Add padding to input
+        />
+        : null
     );
   };
 
+  // custom Send button
   const renderSend = (props) => {
     return (
       <Send {...props}>
@@ -91,6 +127,7 @@ const ChatScreen = ({ route, navigation, db }) => {
     );
   };
 
+  // custom colors on Day component
   const renderDay = (props) => {
     let textColor = '#000'; // default system message color
     if (bgColor === '#FFF') {
