@@ -3,16 +3,13 @@ import { useState, useEffect } from 'react';
 import { GiftedChat, Bubble, SystemMessage, InputToolbar, Send, Day } from 'react-native-gifted-chat';
 import { collection, addDoc, onSnapshot, query, orderBy } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import CustomActions from './CustomActions';
+import MapView from 'react-native-maps';
 
 const ChatScreen = ({ route, navigation, db, isConnected }) => {
   const { userID } = route.params;
   const { name, bgColor } = route.params;
   const [messages, setMessages] = useState([]);
-
-  //save sent messages on Firestore database
-  const onSend = (newMessages) => {
-    addDoc(collection(db, 'messages'), newMessages[0]);
-  };
 
   let unsubscribe;
   useEffect(() => {
@@ -60,6 +57,11 @@ const ChatScreen = ({ route, navigation, db, isConnected }) => {
   const loadCachedMessages = async () => {
     const cachedMessages = await AsyncStorage.getItem('messages') || [];
     setMessages(JSON.parse(cachedMessages));
+  };
+
+  //save sent messages on Firestore database
+  const onSend = (newMessages) => {
+    addDoc(collection(db, 'messages'), newMessages[0]);
   };
 
   // Custom SystemMessage component to style the system messages
@@ -149,6 +151,28 @@ const ChatScreen = ({ route, navigation, db, isConnected }) => {
     );
   };
 
+  const renderCustomActions = (props) => {
+    return <CustomActions {...props} userID={userID} name={name} onSend={onSend} />;
+  };
+
+  const renderCustomView = (props) => {
+    const { currentMessage } = props;
+    if (currentMessage.location) {
+      return (
+        <MapView
+          style={{ width: 150, height: 100, borderRadius: 13, margin: 3 }}
+          region={{
+            latitude: currentMessage.location.latitude,
+            longitude: currentMessage.location.longitude,
+            latitudeDelta: 0.0922,
+            longitudeDelta: 0.0421
+          }}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: bgColor }]}>
       <GiftedChat
@@ -158,6 +182,8 @@ const ChatScreen = ({ route, navigation, db, isConnected }) => {
         renderInputToolbar={renderInputToolbar}
         renderSend={renderSend}
         renderDay={renderDay}
+        renderActions={renderCustomActions}
+        renderCustomView={renderCustomView}
         onSend={messages => onSend(messages)}
         user={{
           _id: userID,
