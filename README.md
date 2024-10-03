@@ -35,22 +35,11 @@ Before setting up  the project, make sure you have the following prerequisites i
 
 To enable Firebase features like real-time messaging and authentication, follow these steps:
 
-1. **Create a Firebase Project:**
+1. **Create a Firebase Project:** Go to the Firebase Console and click Add Project. Follow the instructions to create a new project.
 
-Go to the Firebase Console and click Add Project.
-Follow the instructions to create a new project.
+2. **Set up Firebase Authentication:** In the Firebase Console, go to Authentication > Sign-in method. Enable the Anonymous sign-in provider.
 
-2. **Set up Firebase Authentication:**
-
-In the Firebase Console, go to Authentication > Sign-in method.
-Enable the Anonymous sign-in provider.
-
-3. **Set up Firestore Database:**
-
-Go to Firestore Database in the Firebase Console.
-Click Create Database and choose Start in production mode.
-Firestore will be used to store chat messages in real-time.
-In Firestore Database enable read and write queries in the rules, like so:
+3. **Set up Firestore Database:** Go to Firestore Database in the Firebase Console. Click Create Database and choose Start in production mode. Firestore will be used to store chat messages in real-time. In Firestore Database enable read and write queries in the rules, like so:
 ```
 rules_version = '2';
 service cloud.firestore {
@@ -62,19 +51,9 @@ service cloud.firestore {
 }
 ```
 
-4. **Enable Firebase Storage (for Image Upload):**
+4. **Enable Firebase Storage (for Image Upload):** Navigate to Storage in the Firebase Console and click Get Started. Set up Firebase Storage for uploading images that users send.
 
-Navigate to Storage in the Firebase Console and click Get Started.
-Set up Firebase Storage for uploading images that users send.
-
-5. **Add Firebase Config to Your Project:**
-
-In the Firebase Console, go to Project Settings.
-Scroll down to Your Apps and click Add App.
-Select Web as the platform.
-Copy the Firebase configuration object from the console.
-
-Initialize Firebase in App.js: 
+5. **Add Firebase Config to Your Project:** In the Firebase Console, go to Project Settings. Scroll down to Your Apps and click Add App. Select Web as the platform. Copy the Firebase configuration object from the console. Initialize Firebase in App.js: 
 ``` 
 //initialize Firebase and Cloud Firestore
   const firebaseConfig = {
