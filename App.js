@@ -5,6 +5,8 @@ import { useNetInfo } from '@react-native-community/netinfo';
 import { useEffect } from 'react';
 import { Alert } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { getStorage } from "firebase/storage";
+
 const Stack = createNativeStackNavigator();
 
 import { initializeApp } from 'firebase/app';
@@ -22,8 +24,11 @@ const App = () => {
     messagingSenderId: "48626129731",
     appId: "1:48626129731:web:a71657bb6a1cd1b9042df6"
   };
+  
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+
+  const storage = getStorage(app);
 
   //check for network connection status
   useEffect(() => {
@@ -40,7 +45,7 @@ const App = () => {
       <Stack.Navigator initialRouteName='StartScreen'>
         <Stack.Screen name='ChatterBox' component={StartScreen} />
         <Stack.Screen name='ChatScreen'>
-          {props => <ChatScreen {...props} db={db} isConnected={connectionStatus.isConnected} />}
+          {props => <ChatScreen {...props} db={db} isConnected={connectionStatus.isConnected} storage={storage} />}
         </Stack.Screen>
       </Stack.Navigator>
     </NavigationContainer>

@@ -1,8 +1,10 @@
 import { TouchableOpacity, Text, View, StyleSheet, Alert } from "react-native";
 import { useActionSheet } from "@expo/react-native-action-sheet";
 import * as Location from "expo-location";
+import * as ImagePicker from 'expo-image-picker';
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, userID, name }) => {
+const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, userID, name, storage }) => {
   const actionSheet = useActionSheet();
 
   const onActionPress = () => {
@@ -52,6 +54,54 @@ const CustomActions = ({ wrapperStyle, iconTextStyle, onSend, userID, name }) =>
       } else Alert.alert("Error occurred while fetching location");
     } else Alert.alert("Permissions haven't been granted.");
   };
+
+  const pickImage = async () => {
+    let permissions = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (permissions?.granted) {
+      let result = await ImagePicker.launchImageLibraryAsync();
+      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri);
+      else Alert.alert("Permissions haven't been granted.");
+    }
+  }
+
+  const takePhoto = async () => {
+    let permissions = await ImagePicker.requestCameraPermissionsAsync();
+    if (permissions?.granted) {
+      let result = await ImagePicker.launchCameraAsync();
+      if (!result.canceled) await uploadAndSendImage(result.assets[0].uri);
+      else Alert.alert("Permissions haven't been granted.");
+    }
+  }
+
+  const generateReference = (uri) => {
+    // this will get the file name from the uri
+    const imageName = uri.split("/")[uri.split("/").length - 1];
+    const timeStamp = (new Date()).getTime();
+    return `${userID}-${timeStamp}-${imageName}`;
+  }
+
+  const uploadAndSendImage = async (imageURI) => {
+    const uniqueRefString = generateReference(imageURI);
+    const newUploadRef = ref(storage, uniqueRefString);
+    const response = await fetch(imageURI);
+    const blob = await response.blob();
+    uploadBytes(newUploadRef, blob).then(async (snapshot) => {
+      const imageURL = await getDownloadURL(snapshot.ref)
+      if (imageURL) {
+        const newMessage = [{
+          _id: Math.random().toString(36),
+          text: null,
+          createdAt: new Date(),
+          user: {
+            _id: userID,
+            name: name,
+          },
+          image: imageURL
+        }];
+        onSend(newMessage);
+      }
+    });
+  }
 
   return (
     <TouchableOpacity
